@@ -1,48 +1,51 @@
-var width = 900, height = 300, pad = 20, left_pad = 100;
+var Data;
 
-var x = d3.scale.ordinal().rangeRoundBands([left_pad, width - pad], 0.1);
-var y = d3.scale.linear().range([height-pad, pad]);
+var table = d3.select('#graph')
+.append('table')
+.attr('class', 'table');
 
-var xAxis = d3.svg.axis().scale(x).orient("bottom");
-var yAxis = d3.svg.axis().scale(y).orient("left");
+var thead = table.append('thead'),
+tbody = table.append('tbody');
 
-var svg = d3.select("#graph").append("svg")
-.attr("width", width).attr("height", height);
-
-d3.json('./histogram.json', function (data) {
-
-    data = d3.keys(data).map(function (key) {
-        return {bucket: Number(key),
-        N: data[key]}
+var reload = function () {
+    d3.csv('villains.csv', function (data) {
+      Data = data;
+      redraw();
     });
+  };
+reload();
 
-    x.domain(data.map(function (d) { return d.bucket; }));
-    y.domain([0, d3.max(data, function (d) { return d.N; })]);
+var redraw = function () {
+    var tr = tbody.selectAll('tr')
+    .data(Data);
 
-    // draw x axis
-    svg.append("g")
-    .attr("class", "axis")
-    .attr("transform", "translate(0, "+(height-pad)+")")
-    .call(xAxis);
+    tr.enter()
+    .append('tr');
 
-    // draw y axis
-    svg.append("g")
-    .attr("class", "axis")
-    .attr("transform", "translate("+(left_pad-pad)+", 0)")
-    .call(yAxis);
-
-    svg.selectAll('rect')
-    .data(data)
+    tr.exit()
+    .remove();
+    
+    tr.selectAll('td')
+    .data(function (d) { return d3.values(d); })
     .enter()
-    .append('rect')
-    .attr('class', 'bar')
-    .attr('x', function (d) { return x(d.bucket); })
-    .attr('width', x.rangeBand())
-    .attr('y', height-pad)
-    .transition()
-    .delay(function (d) { return d.bucket*20; })
-    .duration(800)
-    .attr('y', function (d) { return y(d.N); })
-    .attr('height', function (d) { return height-pad - y(d.N); });
-  
-});
+    .append('td')
+    .text(function (d) { return d; });
+};
+
+// arrange by appearance
+tbody.selectAll('tr')
+.sort(function (a, b) { return d3.ascending(a['Year first'], b['Year first']); });
+redraw();
+
+// required to make the list by doctor name work
+tbody.selectAll('tr').sort(function (a, b) {
+    return d3.descending(Number(a['Doc. no.']), Number(b['Doc. no.']));
+  });
+
+// select only one doctor
+Data = Data.filter(function (d) { return d['Doctor actor'] == 'Matt Smith'; })
+redraw()
+
+tbody.selectAll('tr')
+.filter(function (d) { return d['Doctor actor'] != 'Matt Smith'; })
+.remove()
