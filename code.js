@@ -1,38 +1,109 @@
-var width = 1024,
+var width = 768,
 height = 768,
-rings = 15;
-
-var svg = d3.select('#graph')
-    .append('svg')
-    .style({width: width,
+svg = d3.select('#graph')
+  .append('svg')
+  .attr({width: width,
                 height: height});
 
-var colors = d3.scale.category20b();
-var angle = d3.scale.linear().domain([0, 20]).range([0, 2*Math.PI]);
+var spiral = function (n) {
+    var directions = {up: [0, -1],
+                        left: [-1, 0],
+                        down: [0, 1],
+                        right: [1, 0]};
+    
+    var x = 0,
+        y = 0,
+        min = [0, 0],
+        max = [0, 0],
+        add = [0, 0],
+        direction = 0;
+    
+    var spiral = [];
 
-var arc = d3.svg.arc()
-.innerRadius(function (d) { return d*50/rings; })
-.outerRadius(function (d) { return 50+d*50/rings; })
-.startAngle(function (d, i, j) { return angle(j); })
-.endAngle(function (d, i, j) { return angle(j+1); });
+    d3.range(1, n).forEach(function (i) {
+        spiral.push({x: x, y: y, n: i});
+    
+        add = directions[['up', 'left', 'down', 'right'][direction]];
+        x += add[0], y += add[1];
+    
+        if (x < min[0]) {
+          direction = (direction+1)%4;
+          min[0] = x;
+        }
+        if (x > max[0]) {
+          direction = (direction+1)%4;
+          max[0] = x;
+        }
+        if (y < min[1]) {
+          direction = (direction+1)%4;
+          min[1] = y;
+        }
+        if (y > max[1]) {
+          direction = (direction+1)%4;
+          max[1] = y;
+        }
+      });
+    
+    return spiral;
+}
 
-var shade = {
-    darker: function (d, j) { return d3.rgb(colors(j)).darker(d/rings); },
-    brighter: function (d, j) { return d3.rgb(colors(j)).brighter(d/rings); }
-};
+var dot = d3.svg.symbol().type('circle').size(3),
+center = 400,
+  x = function (x, l) { return center+l*x; },
+  y = function (y, l) { return center+l*y; };
 
-[[100, 100, shade.darker],
-[300, 100, shade.brighter]].forEach(function (conf) {
- svg.append('g')
-   .attr('transform', 'translate('+conf[0]+', '+conf[1]+')')
-   .selectAll('g')
-   .data(colors.range())
-   .enter()
-   .append('g')
-   .selectAll('path')
-   .data(function (d) { return d3.range(0, rings); })
-   .enter()
-   .append('path')
-   .attr("d", arc)
-   .attr('fill', function (d, i, j) { return conf[2](d, j); });
+d3.text('primes-to-100k.txt', function (data) {
+  var primes = data.split('\n').slice(0, 5000).map(Number),
+    sequence = spiral(d3.max(primes)).filter(function (d) {
+    return _.indexOf(primes, d['n'], true) > -1;
+    });
+  var l = 2;
+
+  svg.selectAll('path')
+    .data(sequence)
+    .enter()
+    .append('path')
+    .attr('transform',
+         function (d) { return 'translate('+x(d['x'], l)+', '+y(d['y'], l)+')'; })
+    .attr('d', dot);
+
+    var scale = 8;
+    var a = 2;
+    
+    var regions = d3.nest()
+    .key(function (d) { return Math.floor(d['x']/scale); })
+    .key(function (d) { return Math.floor(d['y']/scale); })
+    .rollup(function (d) { return d.length; })
+        .map(sequence);
+
+    var values = d3.merge(d3.keys(regions).map(function (_x) {
+        return d3.values(regions[_x]);
+    }));
+
+    var median = d3.median(values),
+    extent = d3.extent(values),
+        shades = (extent[1]-extent[0])/2;
+
+    d3.keys(regions).forEach(function (_x) {
+        d3.keys(regions[_x]).forEach(function (_y) {
+    
+            var color,
+            red = '#e23c22',
+            green = '#497c36';
+    
+            if (regions[_x][_y] > median) {
+                color = d3.rgb(green).brighter(regions[_x][_y]/shades);
+            }else{
+                color = d3.rgb(red).darker(regions[_x][_y]/shades);
+            }
+    
+            svg.append('rect')
+            .attr({x: x(_x, a*scale),
+                        y: y(_y, a*scale),
+                        width: a*scale,
+                        height: a*scale})
+            .style({fill: color,
+                        'fill-opacity': 0.9});
+        });
+    });
 });
