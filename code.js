@@ -26,22 +26,14 @@ var axes = [
       .orient('top')
   ];
 
-axes.forEach(function (axis, i) {
+  axes.forEach(function (axis, i) {
     var a = svg.append('g')
-    .attr('transform', 'translate(0, '+(i*50+margin)+')')
-    .data(d3.range(0, 100))
-    .call(axis);
-
-    // axes are made of paths and lines
-    a.selectAll('path')
-    .attr({fill: 'none',
-        stroke: 'black',
-        'stroke-width': 0.5});
-    a.selectAll('line')
-    .attr({fill: 'none',
-        stroke: 'black',
-        'stroke-width': 0.3});
-});
+        .classed('axis', true)
+        .classed('red', i%2 == 0)
+        .attr('transform', 'translate(0, '+(i*50+margin)+')')
+        .data(d3.range(0, 100))
+        .call(axis);
+  });
 
 var axis = d3.svg.axis()
 .scale(x);
