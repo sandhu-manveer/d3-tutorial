@@ -4,6 +4,38 @@
 
 <link href="style.css" rel="stylesheet">
 
+<style>
+    .ocean {
+        fill: #759dd1;
+    }
+    .river {
+        fill: none;
+        stroke: #759dd1;
+        stroke-width: 1;
+    }
+
+    .land {
+        fill: #ede9c9;
+        stroke: #79bcd3;
+        stroke-width: 2;
+    }
+
+    .boundary {
+        stroke: #7b5228;
+        stroke-width: 1;
+        fill: none;
+    }
+
+    .urban {
+        fill: #e1c0a3;
+    }
+
+    .airport {
+        fill: #9e56c7;
+        opacity: 0.6;
+        stroke: #69349d;
+    }
+</style>
 <div class="container">
     <div class="row">
         <div id="graph" class="span12"></div>
@@ -11,5 +43,7 @@
 </div>
 
 <script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v0.min.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="underscore-min.js"></script>
 <script src="code.js"></script>
